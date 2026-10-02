@@ -10,7 +10,7 @@ import {
   AIRecommendationResult
 } from '../types';
 
-const API_BASE = '/api';
+const API_BASE = (((import.meta as any).env?.VITE_API_URL as string) || '').replace(/\/$/, '') + '/api';
 
 function getHeaders(): HeadersInit {
   const token = localStorage.getItem('smartcart_token');
