@@ -59,7 +59,7 @@ if (userCount.count === 0) {
   seedDatabase();
 }
 
-if (process.env.NODE_ENV !== 'test') {
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
   app.listen(config.port, () => {
     console.log(`🚀 SmartCart AI Backend running on http://localhost:${config.port}`);
   });
