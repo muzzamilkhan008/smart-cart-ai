@@ -17,7 +17,6 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.2",
-    "smartcart-ai-root": "file:..",
     "zod": "^3.23.8"
   },
   "devDependencies": {
