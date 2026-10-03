@@ -31,20 +31,25 @@ app.use(express.urlencoded({ extended: true }));
 // Global Auth Middleware
 app.use(authenticateToken);
 
-// Mount API Routes
-app.use('/api/health', healthRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/wishlist', wishlistRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/reviews', reviewRoutes);
-app.use('/api/recommendations', recommendationRoutes);
-app.use('/api/admin', adminRoutes);
+// Root & Health ping
+app.get(['/', '/api'], (req, res) => {
+  res.json({ status: 'ok', service: 'SmartCart AI API' });
+});
+
+// Mount API Routes (supports both /api/* and stripped /* serverless rewrites)
+app.use(['/api/health', '/health'], healthRoutes);
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/products', '/products'], productRoutes);
+app.use(['/api/categories', '/categories'], categoryRoutes);
+app.use(['/api/cart', '/cart'], cartRoutes);
+app.use(['/api/wishlist', '/wishlist'], wishlistRoutes);
+app.use(['/api/orders', '/orders'], orderRoutes);
+app.use(['/api/reviews', '/reviews'], reviewRoutes);
+app.use(['/api/recommendations', '/recommendations'], recommendationRoutes);
+app.use(['/api/admin', '/admin'], adminRoutes);
 
 // Fallback for unhandled routes
-app.use('/api/*', (req, res) => {
+app.use('*', (req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
