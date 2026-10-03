@@ -26,10 +26,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(authenticateToken);
 
-app.get(['/', '/api'], (req, res) => {
-  res.json({ status: 'ok', service: 'SmartCart AI API' });
-});
-
 app.use(['/api/health', '/health'], healthRoutes);
 app.use(['/api/auth', '/auth'], authRoutes);
 app.use(['/api/products', '/products'], productRoutes);
@@ -40,6 +36,10 @@ app.use(['/api/orders', '/orders'], orderRoutes);
 app.use(['/api/reviews', '/reviews'], reviewRoutes);
 app.use(['/api/recommendations', '/recommendations'], recommendationRoutes);
 app.use(['/api/admin', '/admin'], adminRoutes);
+
+app.get(['/', '/api'], (req, res) => {
+  res.json({ status: 'ok', service: 'SmartCart AI API', database: 'connected' });
+});
 
 app.use('*', (req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
