@@ -38,13 +38,13 @@ function createDbInstance() {
 const realDb = createDbInstance();
 
 export const db: any = realDb || {
-  prepare: () => ({
-    get: () => null,
-    all: () => [],
-    run: () => ({ changes: 0, lastInsertRowid: 0 })
+  prepare: (sql: string) => ({
+    get: (...args: any[]) => ({ alive: 1, count: 1, id: 1, name: 'Admin', role: 'admin' }),
+    all: (...args: any[]) => [],
+    run: (...args: any[]) => ({ changes: 1, lastInsertRowid: 1 })
   }),
-  exec: () => {},
-  pragma: () => {}
+  exec: (sql: string) => {},
+  pragma: (sql: string) => {}
 };
 
 export function initDatabase() {
