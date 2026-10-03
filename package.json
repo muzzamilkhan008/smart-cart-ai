@@ -8,8 +8,7 @@
     "dev:client": "npm run dev --prefix client",
     "build": "npm run build --prefix server && npm run build --prefix client",
     "seed": "npm run seed --prefix server",
-    "test": "npm run test --prefix server && npm run test --prefix client",
-    "postinstall": "npm install --prefix server"
+    "test": "npm run test --prefix server && npm run test --prefix client"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
