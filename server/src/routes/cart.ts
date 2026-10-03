@@ -37,7 +37,7 @@ router.get('/', requireAuth, (req: AuthenticatedRequest, res: Response) => {
 
     // Calculate cart totals
     let subtotal = 0;
-    formattedItems.forEach(i => {
+    formattedItems.forEach((i: any) => {
       subtotal += i.product.effectivePrice * i.quantity;
     });
 
@@ -47,7 +47,7 @@ router.get('/', requireAuth, (req: AuthenticatedRequest, res: Response) => {
     res.json({
       items: formattedItems,
       summary: {
-        itemCount: formattedItems.reduce((acc, item) => acc + item.quantity, 0),
+        itemCount: formattedItems.reduce((acc: number, item: any) => acc + item.quantity, 0),
         subtotal,
         shippingFee,
         total

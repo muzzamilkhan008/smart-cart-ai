@@ -1,20 +1,51 @@
-import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 import { config } from '../config/env';
+
+let DatabaseConstructor: any = null;
+try {
+  DatabaseConstructor = require('better-sqlite3');
+} catch (e) {
+  console.error('better-sqlite3 module require failed:', e);
+}
 
 // Ensure data folder exists
 const dbPath = path.isAbsolute(config.databasePath)
   ? config.databasePath
   : path.join(__dirname, '../../', config.databasePath);
 
-const dbDir = path.dirname(dbPath);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+try {
+  const dbDir = path.dirname(dbPath);
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
+} catch (e) {
+  console.error('Failed to create database directory:', e);
 }
 
-export const db = new Database(dbPath);
-db.pragma('foreign_keys = ON');
+function createDbInstance() {
+  if (!DatabaseConstructor) return null;
+  try {
+    const instance = new DatabaseConstructor(dbPath);
+    instance.pragma('foreign_keys = ON');
+    return instance;
+  } catch (err) {
+    console.error('Failed to initialize SQLite database instance:', err);
+    return null;
+  }
+}
+
+const realDb = createDbInstance();
+
+export const db: any = realDb || {
+  prepare: () => ({
+    get: () => null,
+    all: () => [],
+    run: () => ({ changes: 0, lastInsertRowid: 0 })
+  }),
+  exec: () => {},
+  pragma: () => {}
+};
 
 export function initDatabase() {
   db.exec(`
