@@ -2,13 +2,6 @@ import path from 'path';
 import fs from 'fs';
 import { config } from '../config/env';
 
-let DatabaseConstructor: any = null;
-try {
-  DatabaseConstructor = require('better-sqlite3');
-} catch (e) {
-  console.error('better-sqlite3 module require failed:', e);
-}
-
 // Ensure data folder exists
 const dbPath = path.isAbsolute(config.databasePath)
   ? config.databasePath
@@ -24,7 +17,14 @@ try {
 }
 
 function createDbInstance() {
-  if (!DatabaseConstructor) return null;
+  if (process.env.VERCEL || process.env.VERCEL_ENV || process.env.NOW_REGION) return null;
+  let DatabaseConstructor: any = null;
+  try {
+    DatabaseConstructor = require('better-sqlite3');
+  } catch (e) {
+    console.error('better-sqlite3 module require failed:', e);
+    return null;
+  }
   try {
     const instance = new DatabaseConstructor(dbPath);
     instance.pragma('foreign_keys = ON');
