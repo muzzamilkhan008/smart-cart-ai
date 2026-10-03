@@ -56,16 +56,18 @@ app.use('*', (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
-// Initialize DB and Auto-seed if empty
-try {
-  initDatabase();
-  const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-  if (userCount.count === 0) {
-    console.log('Database empty. Running seed...');
-    seedDatabase();
+// Initialize DB and Auto-seed if empty (skipped on serverless cold start for instant response)
+if (!process.env.VERCEL) {
+  try {
+    initDatabase();
+    const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
+    if (userCount.count === 0) {
+      console.log('Database empty. Running seed...');
+      seedDatabase();
+    }
+  } catch (err) {
+    console.error('Database initialization error during cold start:', err);
   }
-} catch (err) {
-  console.error('Database initialization error during cold start:', err);
 }
 
 if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
