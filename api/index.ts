@@ -1,4 +1,4 @@
-import app from '../server/dist/index';
+import app from '../server/src/index';
 
 export default function handler(req: any, res: any) {
   return app(req, res);
