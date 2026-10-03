@@ -56,8 +56,10 @@ app.use('*', (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
-// Initialize DB and Auto-seed if empty (skipped on serverless cold start for instant response)
-if (!process.env.VERCEL) {
+const isServerless = !!(process.env.VERCEL || process.env.VERCEL_ENV || process.env.NOW_REGION || process.env.AWS_LAMBDA_FUNCTION_NAME);
+
+// Initialize DB and Auto-seed if empty (skipped on serverless for instant response)
+if (!isServerless) {
   try {
     initDatabase();
     const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
@@ -70,7 +72,8 @@ if (!process.env.VERCEL) {
   }
 }
 
-if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
+// Only start standalone HTTP server when executed directly (never in serverless function imports)
+if (require.main === module && process.env.NODE_ENV !== 'test') {
   app.listen(config.port, () => {
     console.log(`🚀 SmartCart AI Backend running on http://localhost:${config.port}`);
   });
