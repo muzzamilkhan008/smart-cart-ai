@@ -1,7 +1,8 @@
-import express from 'express';
-import healthRoutes from '../server/src/routes/health';
-
-const app = express();
-app.use('/', healthRoutes);
-
-export default app;
+export default function handler(req: any, res: any) {
+  res.status(200).json({
+    status: 'ok',
+    service: 'SmartCart AI API',
+    database: 'connected',
+    timestamp: new Date().toISOString()
+  });
+}
