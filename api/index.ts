@@ -1,5 +1,5 @@
-const app = require('../server/dist/index').default || require('../server/dist/index');
+import app from '../server/src/index';
 
-module.exports = (req: any, res: any) => {
+export default function handler(req: any, res: any) {
   return app(req, res);
-};
+}
