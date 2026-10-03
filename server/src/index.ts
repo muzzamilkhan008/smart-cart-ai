@@ -52,11 +52,15 @@ app.use('/api/*', (req, res) => {
 app.use(errorHandler);
 
 // Initialize DB and Auto-seed if empty
-initDatabase();
-const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-if (userCount.count === 0) {
-  console.log('Database empty. Running seed...');
-  seedDatabase();
+try {
+  initDatabase();
+  const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
+  if (userCount.count === 0) {
+    console.log('Database empty. Running seed...');
+    seedDatabase();
+  }
+} catch (err) {
+  console.error('Database initialization error during cold start:', err);
 }
 
 if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
