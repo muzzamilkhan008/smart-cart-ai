@@ -17,7 +17,6 @@ try {
 }
 
 function createDbInstance() {
-  if (process.env.VERCEL || process.env.VERCEL_ENV || process.env.NOW_REGION) return null;
   let DatabaseConstructor: any = null;
   try {
     DatabaseConstructor = require('better-sqlite3');

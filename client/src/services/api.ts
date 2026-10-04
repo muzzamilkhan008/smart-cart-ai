@@ -10,7 +10,10 @@ import {
   AIRecommendationResult
 } from '../types';
 
-const API_BASE = (((import.meta as any).env?.VITE_API_URL as string) || '').replace(/\/$/, '') + '/api';
+const rawApiUrl = ((import.meta as any).env?.VITE_API_URL as string) || '';
+const API_BASE = rawApiUrl
+  ? (rawApiUrl.replace(/\/$/, '').endsWith('/api') ? rawApiUrl.replace(/\/$/, '') : `${rawApiUrl.replace(/\/$/, '')}/api`)
+  : '/api';
 
 function getHeaders(): HeadersInit {
   const token = localStorage.getItem('smartcart_token');

@@ -19,6 +19,14 @@ import healthRoutes from './routes/health';
 
 const app = express();
 
+// Middleware to normalize Netlify Function rewrites to /api
+app.use((req, res, next) => {
+  if (req.url.startsWith('/.netlify/functions/api')) {
+    req.url = req.url.replace('/.netlify/functions/api', '/api');
+  }
+  next();
+});
+
 // Enable CORS
 app.use(cors({
   origin: true,
@@ -68,7 +76,7 @@ try {
   console.error('Database initialization error during startup:', err);
 }
 
-if (process.env.NODE_ENV !== 'test') {
+if (!process.env.NETLIFY && process.env.NODE_ENV !== 'test') {
   app.listen(config.port, () => {
     console.log(`🚀 SmartCart AI Backend running on port ${config.port}`);
   });
