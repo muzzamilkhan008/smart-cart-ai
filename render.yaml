@@ -1,15 +1,14 @@
 services:
   - type: web
-    name: smartcart-ai-server
+    name: smartcart-ai-backend
     env: node
-    buildCommand: npm install --prefix server && npm run build --prefix server
-    startCommand: npm start --prefix server
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
     envVars:
-      - key: PORT
-        value: 5000
       - key: NODE_ENV
         value: production
+      - key: DATABASE_PATH
+        value: /tmp/smartcart.db
       - key: JWT_SECRET
         generateValue: true
-      - key: DATABASE_PATH
-        value: ./data/smartcart.db
