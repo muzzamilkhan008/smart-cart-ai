@@ -36,46 +36,41 @@ app.get(['/', '/api'], (req, res) => {
   res.json({ status: 'ok', service: 'SmartCart AI API' });
 });
 
-// Mount API Routes (supports both /api/* and stripped /* serverless rewrites)
-app.use(['/api/health', '/health'], healthRoutes);
-app.use(['/api/auth', '/auth'], authRoutes);
-app.use(['/api/products', '/products'], productRoutes);
-app.use(['/api/categories', '/categories'], categoryRoutes);
-app.use(['/api/cart', '/cart'], cartRoutes);
-app.use(['/api/wishlist', '/wishlist'], wishlistRoutes);
-app.use(['/api/orders', '/orders'], orderRoutes);
-app.use(['/api/reviews', '/reviews'], reviewRoutes);
-app.use(['/api/recommendations', '/recommendations'], recommendationRoutes);
-app.use(['/api/admin', '/admin'], adminRoutes);
+// Mount API Routes
+app.use('/api/health', healthRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Fallback for unhandled routes
-app.use('*', (req, res) => {
+app.use('/api/*', (req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
 // Error handling middleware
 app.use(errorHandler);
 
-const isServerless = !!(process.env.VERCEL || process.env.VERCEL_ENV || process.env.NOW_REGION || process.env.AWS_LAMBDA_FUNCTION_NAME);
-
-// Initialize DB and Auto-seed if empty (skipped on serverless for instant response)
-if (!isServerless) {
-  try {
-    initDatabase();
-    const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-    if (userCount.count === 0) {
-      console.log('Database empty. Running seed...');
-      seedDatabase();
-    }
-  } catch (err) {
-    console.error('Database initialization error during cold start:', err);
+// Initialize DB and Auto-seed if empty
+try {
+  initDatabase();
+  const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
+  if (userCount.count === 0) {
+    console.log('Database empty. Running seed...');
+    seedDatabase();
   }
+} catch (err) {
+  console.error('Database initialization error during startup:', err);
 }
 
-// Only start standalone HTTP server when executed directly (never in serverless function imports)
-if (require.main === module && process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test') {
   app.listen(config.port, () => {
-    console.log(`🚀 SmartCart AI Backend running on http://localhost:${config.port}`);
+    console.log(`🚀 SmartCart AI Backend running on port ${config.port}`);
   });
 }
 
