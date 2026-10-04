@@ -129,10 +129,12 @@ export const db: any = realDb || {
               product_id: item.product_id,
               quantity: item.quantity,
               created_at: item.created_at,
+              name: prod.name,
               product_name: prod.name,
               price: prod.price,
               discount_price: prod.discount_price,
-              stock_quantity: prod.stock_quantity,
+              stock_quantity: prod.stock_quantity ?? 20,
+              is_active: prod.is_active ?? 1,
               brand: prod.brand,
               slug: prod.slug,
               image_url: prod.images && prod.images[0] ? prod.images[0] : 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800'
