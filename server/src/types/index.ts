@@ -27,6 +27,7 @@ export interface Product {
   description: string;
   price: number;
   discount_price: number | null;
+  effectivePrice?: number;
   stock_quantity: number;
   is_featured: number;
   is_active: number;

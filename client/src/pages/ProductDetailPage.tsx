@@ -90,9 +90,11 @@ export const ProductDetailPage: React.FC = () => {
   }
 
   const isWishlisted = wishlistProductIds.has(product.id);
-  const effectivePrice = product.discount_price ? product.discount_price : product.price;
-  const discountPercent = product.discount_price
-    ? Math.round(((product.price - product.discount_price) / product.price) * 100)
+  const price = typeof product?.price === 'number' ? product.price : Number(product?.price || 0);
+  const discountPrice = typeof product?.discount_price === 'number' ? product.discount_price : (product?.discount_price ? Number(product.discount_price) : null);
+  const effectivePrice = typeof product?.effectivePrice === 'number' ? product.effectivePrice : (discountPrice !== null ? discountPrice : price);
+  const discountPercent = discountPrice !== null && price > 0
+    ? Math.round(((price - discountPrice) / price) * 100)
     : 0;
 
   const handleBuyNow = async () => {
@@ -204,16 +206,16 @@ export const ProductDetailPage: React.FC = () => {
           {/* Price Box */}
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-baseline gap-3">
             <span className="text-3xl font-black text-slate-900 dark:text-white">
-              ₹{effectivePrice.toLocaleString('en-IN')}
+              ₹{(effectivePrice || 0).toLocaleString('en-IN')}
             </span>
-            {product.discount_price && (
+            {discountPrice !== null && (
               <span className="text-base text-slate-400 line-through">
-                ₹{product.price.toLocaleString('en-IN')}
+                ₹{(price || 0).toLocaleString('en-IN')}
               </span>
             )}
-            {discountPercent > 0 && (
+            {discountPercent > 0 && discountPrice !== null && (
               <span className="ml-auto text-xs font-bold text-rose-600 bg-rose-100 dark:bg-rose-950/60 px-2.5 py-1 rounded-lg">
-                Save ₹{(product.price - product.discount_price!).toLocaleString('en-IN')}
+                Save ₹{((price - discountPrice) || 0).toLocaleString('en-IN')}
               </span>
             )}
           </div>

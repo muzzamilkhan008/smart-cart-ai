@@ -11,25 +11,30 @@ function formatProduct(row: any): Product {
     SELECT image_url FROM product_images WHERE product_id = ? ORDER BY is_primary DESC, display_order ASC
   `).all(row.id).map((img: any) => img.image_url);
 
+  const priceNum = Number(row.price ?? 0);
+  const discountPriceNum = (row.discount_price !== undefined && row.discount_price !== null) ? Number(row.discount_price) : null;
+  const effectivePriceNum = discountPriceNum !== null ? discountPriceNum : priceNum;
+
   return {
-    id: row.id,
-    category_id: row.category_id,
+    id: Number(row.id || 1),
+    category_id: Number(row.category_id || 1),
     category_name: row.category_name || '',
-    name: row.name,
-    slug: row.slug,
-    sku: row.sku,
-    brand: row.brand,
-    description: row.description,
-    price: row.price,
-    discount_price: row.discount_price,
-    stock_quantity: row.stock_quantity,
-    is_featured: row.is_featured,
-    is_active: row.is_active,
-    rating: row.rating,
-    review_count: row.review_count,
-    images: images.length > 0 ? images : ['https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800'],
-    created_at: row.created_at,
-    updated_at: row.updated_at
+    name: row.name || 'Smart Product',
+    slug: row.slug || `product-${row.id || 1}`,
+    sku: row.sku || `SKU-${row.id || 1}`,
+    brand: row.brand || 'SmartCart',
+    description: row.description || '',
+    price: priceNum,
+    discount_price: discountPriceNum,
+    effectivePrice: effectivePriceNum,
+    stock_quantity: Number(row.stock_quantity ?? 10),
+    is_featured: Number(row.is_featured ?? 0),
+    is_active: Number(row.is_active ?? 1),
+    rating: Number(row.rating ?? 4.5),
+    review_count: Number(row.review_count ?? 10),
+    images: (row.images && row.images.length > 0) ? row.images : (images.length > 0 ? images : ['https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800']),
+    created_at: row.created_at || new Date().toISOString(),
+    updated_at: row.updated_at || new Date().toISOString()
   };
 }
 

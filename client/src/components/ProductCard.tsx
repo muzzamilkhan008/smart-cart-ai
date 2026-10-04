@@ -16,9 +16,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { wishlistProductIds, toggleWishlist } = useWishlist();
 
   const isWishlisted = wishlistProductIds.has(product.id);
-  const effectivePrice = product.discount_price ? product.discount_price : product.price;
-  const discountPercent = product.discount_price
-    ? Math.round(((product.price - product.discount_price) / product.price) * 100)
+  const price = typeof product?.price === 'number' ? product.price : Number(product?.price || 0);
+  const discountPrice = typeof product?.discount_price === 'number' ? product.discount_price : (product?.discount_price ? Number(product.discount_price) : null);
+  const effectivePrice = typeof product?.effectivePrice === 'number' ? product.effectivePrice : (discountPrice !== null ? discountPrice : price);
+  const discountPercent = discountPrice !== null && price > 0
+    ? Math.round(((price - discountPrice) / price) * 100)
     : 0;
 
   const primaryImage = product.images && product.images.length > 0
@@ -108,11 +110,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <div className="mt-auto flex items-end justify-between pt-3 border-t border-slate-100 dark:border-slate-800/80">
           <div>
             <div className="text-lg font-bold text-slate-900 dark:text-white leading-none">
-              ₹{effectivePrice.toLocaleString('en-IN')}
+              ₹{(effectivePrice || 0).toLocaleString('en-IN')}
             </div>
-            {product.discount_price && (
+            {discountPrice !== null && (
               <div className="text-xs text-slate-400 line-through mt-0.5">
-                ₹{product.price.toLocaleString('en-IN')}
+                ₹{(price || 0).toLocaleString('en-IN')}
               </div>
             )}
           </div>
