@@ -35,6 +35,11 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     },
   });
 
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new Error(`API returned status ${res.status} (${contentType || 'non-JSON'}).`);
+  }
+
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.error || 'An unexpected server error occurred');
