@@ -63,43 +63,235 @@ const fallbackProducts = [
   { id: 12, category_id: 3, category_name: 'Home & Kitchen', name: 'Ergonomic Memory Foam Contour Pillow', slug: 'ergonomic-memory-foam-pillow', sku: 'HOME-PIL-012', brand: 'ComfortRest', description: 'Cervical neck support pillow designed with breathable cooling gel memory foam.', price: 1899, discount_price: 1299, stock_quantity: 60, is_featured: 0, is_active: 1, rating: 4.5, review_count: 92, images: ['https://images.unsplash.com/photo-1584100936595-c0654b55a2e6?w=800'] }
 ];
 
+const fallbackCartItems: Array<{ id: number; user_id: number; product_id: number; quantity: number; created_at: string }> = [];
+const fallbackOrders: Array<any> = [];
+const fallbackOrderItems: Array<any> = [];
+const fallbackWishlistItems: Array<{ id: number; user_id: number; product_id: number; created_at: string }> = [];
+
+let nextCartItemId = 1;
+let nextOrderId = 1;
+let nextOrderItemId = 1;
+let nextWishlistItemId = 1;
+
 export const db: any = realDb || {
-  prepare: (sql: string) => ({
-    get: (...args: any[]) => {
-      const lowerSql = sql.toLowerCase();
-      if (lowerSql.includes('count(*) as count from users')) {
-        return { count: 3 };
-      }
-      if (lowerSql.includes('from users where id =')) {
-        return { id: args[0] || 1, name: 'System Admin', email: 'admin@smartcart.com', role: 'admin', phone: '+91 9876543210' };
-      }
-      if (lowerSql.includes('from products')) {
-        const idOrParam = args[0];
-        const found = fallbackProducts.find(p => p.id === Number(idOrParam) || p.slug === String(idOrParam));
-        return found || fallbackProducts[0];
-      }
-      return { id: 1, alive: 1, count: 1, name: 'Admin', role: 'admin' };
-    },
-    all: (...args: any[]) => {
-      const lowerSql = sql.toLowerCase();
-      if (lowerSql.includes('product_images')) {
-        const prodId = args[0] || 1;
-        const prod = fallbackProducts.find(p => p.id === Number(prodId));
-        return (prod && prod.images ? prod.images : ['https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800']).map(url => ({ image_url: url }));
-      }
-      if (lowerSql.includes('categories')) {
-        return fallbackCategories;
-      }
-      if (lowerSql.includes('products')) {
-        if (lowerSql.includes('is_featured = 1')) {
-          return fallbackProducts.filter(p => p.is_featured === 1);
+  transaction: (fn: any) => fn,
+  prepare: (sql: string) => {
+    const lowerSql = sql.toLowerCase().trim();
+    return {
+      get: (...args: any[]) => {
+        if (lowerSql.includes('count(*) as count from users')) {
+          return { count: 3 };
         }
-        return fallbackProducts;
+        if (lowerSql.includes('from users')) {
+          const argVal = args[0];
+          return { id: typeof argVal === 'number' ? argVal : 1, name: 'System Admin', email: typeof argVal === 'string' ? argVal : 'admin@smartcart.com', password_hash: '$2b$10$e8460', role: 'admin', phone: '+91 9876543210' };
+        }
+        if (lowerSql.includes('from cart_items')) {
+          if (lowerSql.includes('ci.id =') || lowerSql.includes('ci.id=?')) {
+            const cartId = Number(args[0]);
+            const userId = Number(args[1]);
+            const item = fallbackCartItems.find(i => i.id === cartId && i.user_id === userId);
+            if (item) {
+              const prod = fallbackProducts.find(p => p.id === item.product_id);
+              return { id: item.id, product_id: item.product_id, stock_quantity: prod ? prod.stock_quantity : 20 };
+            }
+            return undefined;
+          }
+          const userId = Number(args[0]);
+          const productId = Number(args[1]);
+          return fallbackCartItems.find(i => i.user_id === userId && i.product_id === productId);
+        }
+        if (lowerSql.includes('from wishlist_items')) {
+          const userId = Number(args[0]);
+          const productId = Number(args[1]);
+          return fallbackWishlistItems.find(i => i.user_id === userId && i.product_id === productId);
+        }
+        if (lowerSql.includes('from orders')) {
+          const orderId = Number(args[0]);
+          return fallbackOrders.find(o => o.id === orderId);
+        }
+        if (lowerSql.includes('from products')) {
+          const idOrParam = args[0];
+          const found = fallbackProducts.find(p => p.id === Number(idOrParam) || p.slug === String(idOrParam));
+          return found || fallbackProducts[0];
+        }
+        return { id: 1, alive: 1, count: 1, name: 'Admin', role: 'admin' };
+      },
+      all: (...args: any[]) => {
+        if (lowerSql.includes('from cart_items') || (lowerSql.includes('cart_items') && lowerSql.includes('ci.product_id'))) {
+          const userId = Number(args[0]);
+          const userItems = fallbackCartItems.filter(i => i.user_id === userId);
+          return userItems.map(item => {
+            const prod = fallbackProducts.find(p => p.id === item.product_id) || fallbackProducts[0];
+            return {
+              id: item.id,
+              user_id: item.user_id,
+              product_id: item.product_id,
+              quantity: item.quantity,
+              created_at: item.created_at,
+              product_name: prod.name,
+              price: prod.price,
+              discount_price: prod.discount_price,
+              stock_quantity: prod.stock_quantity,
+              brand: prod.brand,
+              slug: prod.slug,
+              image_url: prod.images && prod.images[0] ? prod.images[0] : 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800'
+            };
+          });
+        }
+        if (lowerSql.includes('from wishlist_items')) {
+          const userId = Number(args[0]);
+          const userItems = fallbackWishlistItems.filter(i => i.user_id === userId);
+          return userItems.map(item => {
+            const prod = fallbackProducts.find(p => p.id === item.product_id) || fallbackProducts[0];
+            return {
+              id: item.id,
+              user_id: item.user_id,
+              product_id: item.product_id,
+              created_at: item.created_at,
+              name: prod.name,
+              slug: prod.slug,
+              brand: prod.brand,
+              price: prod.price,
+              discount_price: prod.discount_price,
+              stock_quantity: prod.stock_quantity,
+              rating: prod.rating,
+              review_count: prod.review_count,
+              image_url: prod.images && prod.images[0] ? prod.images[0] : 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800'
+            };
+          });
+        }
+        if (lowerSql.includes('from order_items')) {
+          const orderId = Number(args[0]);
+          const items = fallbackOrderItems.filter(oi => oi.order_id === orderId);
+          return items.map(oi => {
+            const prod = fallbackProducts.find(p => p.id === oi.product_id);
+            return {
+              ...oi,
+              slug: prod ? prod.slug : 'product',
+              image_url: prod && prod.images && prod.images[0] ? prod.images[0] : 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800'
+            };
+          });
+        }
+        if (lowerSql.includes('from orders')) {
+          const userId = args[0] ? Number(args[0]) : null;
+          if (userId) {
+            return fallbackOrders.filter(o => o.user_id === userId);
+          }
+          return fallbackOrders;
+        }
+        if (lowerSql.includes('from categories')) {
+          return fallbackCategories;
+        }
+        if (lowerSql.includes('from products')) {
+          if (lowerSql.includes('is_featured = 1')) {
+            return fallbackProducts.filter(p => p.is_featured === 1);
+          }
+          return fallbackProducts;
+        }
+        if (lowerSql.includes('product_images')) {
+          const prodId = args[0] || 1;
+          const prod = fallbackProducts.find(p => p.id === Number(prodId));
+          return (prod && prod.images ? prod.images : ['https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800']).map(url => ({ image_url: url }));
+        }
+        return [];
+      },
+      run: (...args: any[]) => {
+        if (lowerSql.includes('insert into cart_items')) {
+          const userId = Number(args[0]);
+          const productId = Number(args[1]);
+          const quantity = Number(args[2] || 1);
+          const existing = fallbackCartItems.find(i => i.user_id === userId && i.product_id === productId);
+          if (existing) {
+            existing.quantity += quantity;
+            return { changes: 1, lastInsertRowid: existing.id };
+          }
+          const newId = nextCartItemId++;
+          fallbackCartItems.push({ id: newId, user_id: userId, product_id: productId, quantity, created_at: new Date().toISOString() });
+          return { changes: 1, lastInsertRowid: newId };
+        }
+        if (lowerSql.includes('update cart_items')) {
+          if (lowerSql.includes('quantity = quantity + 1')) {
+            const cartId = Number(args[0]);
+            const item = fallbackCartItems.find(i => i.id === cartId);
+            if (item) item.quantity += 1;
+          } else {
+            const quantity = Number(args[0]);
+            const cartId = Number(args[1]);
+            const item = fallbackCartItems.find(i => i.id === cartId);
+            if (item) item.quantity = quantity;
+          }
+          return { changes: 1, lastInsertRowid: 1 };
+        }
+        if (lowerSql.includes('delete from cart_items')) {
+          if (lowerSql.includes('id =') && lowerSql.includes('user_id =')) {
+            const cartId = Number(args[0]);
+            const userId = Number(args[1]);
+            const idx = fallbackCartItems.findIndex(i => i.id === cartId && i.user_id === userId);
+            if (idx !== -1) fallbackCartItems.splice(idx, 1);
+          } else if (lowerSql.includes('user_id =')) {
+            const userId = Number(args[0]);
+            for (let i = fallbackCartItems.length - 1; i >= 0; i--) {
+              if (fallbackCartItems[i].user_id === userId) fallbackCartItems.splice(i, 1);
+            }
+          }
+          return { changes: 1, lastInsertRowid: 0 };
+        }
+        if (lowerSql.includes('insert into orders')) {
+          const orderId = nextOrderId++;
+          const orderObj = {
+            id: orderId,
+            order_number: args[0],
+            user_id: Number(args[1]),
+            total_amount: Number(args[2]),
+            subtotal: Number(args[3]),
+            discount_amount: 0,
+            shipping_fee: Number(args[4]),
+            payment_method: args[5],
+            payment_status: args[6],
+            shipping_address_json: args[7],
+            tracking_number: args[8],
+            estimated_delivery: args[9],
+            status: 'Confirmed',
+            created_at: new Date().toISOString()
+          };
+          fallbackOrders.push(orderObj);
+          return { changes: 1, lastInsertRowid: orderId };
+        }
+        if (lowerSql.includes('insert into order_items')) {
+          const orderItemId = nextOrderItemId++;
+          fallbackOrderItems.push({
+            id: orderItemId,
+            order_id: Number(args[0]),
+            product_id: Number(args[1]),
+            product_name: args[2],
+            price: Number(args[3]),
+            quantity: Number(args[4]),
+            total: Number(args[5])
+          });
+          return { changes: 1, lastInsertRowid: orderItemId };
+        }
+        if (lowerSql.includes('insert into wishlist_items')) {
+          const userId = Number(args[0]);
+          const productId = Number(args[1]);
+          const existing = fallbackWishlistItems.find(w => w.user_id === userId && w.product_id === productId);
+          if (!existing) {
+            const wId = nextWishlistItemId++;
+            fallbackWishlistItems.push({ id: wId, user_id: userId, product_id: productId, created_at: new Date().toISOString() });
+          }
+          return { changes: 1, lastInsertRowid: 1 };
+        }
+        if (lowerSql.includes('delete from wishlist_items')) {
+          const userId = Number(args[0]);
+          const productId = Number(args[1]);
+          const idx = fallbackWishlistItems.findIndex(w => w.user_id === userId && w.product_id === productId);
+          if (idx !== -1) fallbackWishlistItems.splice(idx, 1);
+          return { changes: 1, lastInsertRowid: 0 };
+        }
+        return { changes: 1, lastInsertRowid: 1 };
       }
-      return [];
-    },
-    run: (...args: any[]) => ({ changes: 1, lastInsertRowid: 1 })
-  }),
+    };
+  },
   exec: (sql: string) => {},
   pragma: (sql: string) => {}
 };

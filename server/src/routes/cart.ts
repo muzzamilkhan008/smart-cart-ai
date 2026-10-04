@@ -17,28 +17,36 @@ router.get('/', requireAuth, (req: AuthenticatedRequest, res: Response) => {
       WHERE ci.user_id = ?
     `).all(userId);
 
-    const formattedItems = items.map((item: any) => ({
-      id: item.id,
-      user_id: item.user_id,
-      product_id: item.product_id,
-      quantity: item.quantity,
-      product: {
-        id: item.product_id,
-        name: item.product_name,
-        slug: item.slug,
-        brand: item.brand,
-        price: item.price,
-        discount_price: item.discount_price,
-        effectivePrice: item.discount_price ? item.discount_price : item.price,
-        stock_quantity: item.stock_quantity,
-        images: item.image_url ? [item.image_url] : ['https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800']
-      }
-    }));
+    const formattedItems = items.map((item: any) => {
+      const priceNum = Number(item.price) || 0;
+      const discountNum = item.discount_price !== null && item.discount_price !== undefined ? Number(item.discount_price) : null;
+      const effPrice = discountNum && !isNaN(discountNum) ? discountNum : priceNum;
+      const qtyNum = Number(item.quantity) || 1;
+      return {
+        id: item.id,
+        user_id: item.user_id,
+        product_id: item.product_id,
+        quantity: qtyNum,
+        product: {
+          id: item.product_id,
+          name: item.product_name,
+          slug: item.slug,
+          brand: item.brand,
+          price: priceNum,
+          discount_price: discountNum,
+          effectivePrice: effPrice,
+          stock_quantity: Number(item.stock_quantity) || 0,
+          images: item.image_url ? [item.image_url] : ['https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800']
+        }
+      };
+    });
 
     // Calculate cart totals
     let subtotal = 0;
     formattedItems.forEach((i: any) => {
-      subtotal += i.product.effectivePrice * i.quantity;
+      const priceVal = Number(i.product.effectivePrice) || Number(i.product.price) || 0;
+      const qtyVal = Number(i.quantity) || 1;
+      subtotal += priceVal * qtyVal;
     });
 
     const shippingFee = subtotal > 2000 || subtotal === 0 ? 0 : 150;
@@ -47,7 +55,7 @@ router.get('/', requireAuth, (req: AuthenticatedRequest, res: Response) => {
     res.json({
       items: formattedItems,
       summary: {
-        itemCount: formattedItems.reduce((acc: number, item: any) => acc + item.quantity, 0),
+        itemCount: formattedItems.reduce((acc: number, item: any) => acc + (Number(item.quantity) || 0), 0),
         subtotal,
         shippingFee,
         total
