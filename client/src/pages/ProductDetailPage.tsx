@@ -326,9 +326,9 @@ export const ProductDetailPage: React.FC = () => {
           <div className="flex items-center gap-6">
             <div className="text-center">
               <div className="text-3xl font-black text-slate-900 dark:text-white">
-                {reviewStats.averageRating.toFixed(1)}
+                {(typeof reviewStats?.averageRating === 'number' && !isNaN(reviewStats.averageRating) ? reviewStats.averageRating : (Number(reviewStats?.averageRating) || 0)).toFixed(1)}
               </div>
-              <RatingStars rating={reviewStats.averageRating} showCount={false} size="sm" />
+              <RatingStars rating={reviewStats?.averageRating || 0} showCount={false} size="sm" />
               <span className="text-[10px] text-slate-400">{reviewStats.totalReviews} Ratings</span>
             </div>
           </div>

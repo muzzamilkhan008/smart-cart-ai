@@ -107,25 +107,27 @@ export class RecommendationService {
 
     // Standardize products with image arrays
     let products: Product[] = rows.map(r => {
-      const effectivePrice = r.discount_price ? r.discount_price : r.price;
+      const priceNum = Number(r.price ?? 0);
+      const discountPriceNum = (r.discount_price !== undefined && r.discount_price !== null) ? Number(r.discount_price) : null;
+      const effectivePriceNum = discountPriceNum !== null ? discountPriceNum : priceNum;
       return {
-        id: r.id,
-        category_id: r.category_id,
-        category_name: r.category_name,
-        name: r.name,
-        slug: r.slug,
-        sku: r.sku,
-        brand: r.brand,
-        description: r.description,
-        price: r.price,
-        discount_price: r.discount_price,
-        stock_quantity: r.stock_quantity,
-        is_featured: r.is_featured,
-        is_active: r.is_active,
-        rating: r.rating,
-        review_count: r.review_count,
-        images: r.primary_image ? [r.primary_image] : ['https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800'],
-        effectivePrice
+        id: Number(r.id || 1),
+        category_id: Number(r.category_id || 1),
+        category_name: r.category_name || '',
+        name: r.name || 'Smart Product',
+        slug: r.slug || `product-${r.id || 1}`,
+        sku: r.sku || `SKU-${r.id || 1}`,
+        brand: r.brand || 'SmartCart',
+        description: r.description || '',
+        price: priceNum,
+        discount_price: discountPriceNum,
+        stock_quantity: Number(r.stock_quantity ?? 10),
+        is_featured: Number(r.is_featured ?? 0),
+        is_active: Number(r.is_active ?? 1),
+        rating: Number(r.rating ?? 4.5),
+        review_count: Number(r.review_count ?? 10),
+        images: r.primary_image ? [r.primary_image] : (r.images && r.images.length > 0 ? r.images : ['https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800']),
+        effectivePrice: effectivePriceNum
       } as any;
     });
 

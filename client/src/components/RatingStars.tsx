@@ -2,7 +2,7 @@ import React from 'react';
 import { Star } from 'lucide-react';
 
 interface RatingStarsProps {
-  rating: number;
+  rating?: number;
   count?: number;
   size?: 'sm' | 'md' | 'lg';
   showCount?: boolean;
@@ -14,6 +14,9 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
   size = 'sm',
   showCount = true
 }) => {
+  const numericRating = typeof rating === 'number' && !isNaN(rating) ? rating : (Number(rating) || 0);
+  const numericCount = typeof count === 'number' && !isNaN(count) ? count : (count !== undefined ? Number(count) : undefined);
+
   const starSizes = {
     sm: 'w-3.5 h-3.5',
     md: 'w-4 h-4',
@@ -27,9 +30,9 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
           <Star
             key={star}
             className={`${starSizes[size]} ${
-              star <= Math.floor(rating)
+              star <= Math.floor(numericRating)
                 ? 'fill-amber-400 text-amber-400'
-                : star - 0.5 <= rating
+                : star - 0.5 <= numericRating
                 ? 'fill-amber-400/50 text-amber-400'
                 : 'text-slate-300 dark:text-slate-700'
             }`}
@@ -37,10 +40,10 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
         ))}
       </div>
       <span className={`font-semibold text-slate-700 dark:text-slate-300 ${size === 'sm' ? 'text-xs' : 'text-sm'}`}>
-        {rating.toFixed(1)}
+        {numericRating.toFixed(1)}
       </span>
-      {showCount && count !== undefined && (
-        <span className="text-xs text-slate-400 font-normal">({count})</span>
+      {showCount && numericCount !== undefined && (
+        <span className="text-xs text-slate-400 font-normal">({numericCount})</span>
       )}
     </div>
   );
