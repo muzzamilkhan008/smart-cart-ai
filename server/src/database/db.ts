@@ -84,7 +84,16 @@ export const db: any = realDb || {
         }
         if (lowerSql.includes('from users')) {
           const argVal = args[0];
-          return { id: typeof argVal === 'number' ? argVal : 1, name: 'System Admin', email: typeof argVal === 'string' ? argVal : 'admin@smartcart.com', password_hash: '$2b$10$e8460', role: 'admin', phone: '+91 9876543210' };
+          const emailStr = typeof argVal === 'string' ? argVal.toLowerCase().trim() : '';
+          const isCustomer = emailStr.includes('user') || argVal === 2;
+          return {
+            id: typeof argVal === 'number' ? argVal : (isCustomer ? 2 : 1),
+            name: isCustomer ? 'Demo Customer' : 'System Admin',
+            email: emailStr || (isCustomer ? 'user@smartcart.com' : 'admin@smartcart.com'),
+            password_hash: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW',
+            role: isCustomer ? 'customer' : 'admin',
+            phone: '+91 9876543210'
+          };
         }
         if (lowerSql.includes('from cart_items')) {
           if (lowerSql.includes('ci.id =') || lowerSql.includes('ci.id=?')) {
