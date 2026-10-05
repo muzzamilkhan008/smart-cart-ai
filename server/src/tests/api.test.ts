@@ -58,6 +58,79 @@ describe('SmartCart AI API Integration Tests', () => {
     expect(res.body.products.length).toBeGreaterThan(0);
   });
 
+  it('POST /api/auth/register registers fresh user, rejects duplicate, and allows login', async () => {
+    const freshEmail = `test_user_${Date.now()}@example.com`;
+
+    // 1. Register fresh user
+    const regRes = await request(app).post('/api/auth/register').send({
+      name: 'Fresh Customer',
+      email: freshEmail,
+      password: 'password123',
+      phone: '+91 9999999999'
+    });
+    expect(regRes.status).toBe(201);
+    expect(regRes.body.token).toBeDefined();
+    expect(regRes.body.user.email).toBe(freshEmail);
+    const token = regRes.body.token;
+
+    // 2. Duplicate registration attempt must fail with 400
+    const dupRes = await request(app).post('/api/auth/register').send({
+      name: 'Fresh Customer',
+      email: freshEmail,
+      password: 'password123'
+    });
+    expect(dupRes.status).toBe(400);
+    expect(dupRes.body.error).toMatch(/already exists/i);
+
+    // 3. Login with fresh user credentials
+    const loginRes = await request(app).post('/api/auth/login').send({
+      email: freshEmail,
+      password: 'password123'
+    });
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.token).toBeDefined();
+
+    // 4. Fetch profile with token
+    const profileRes = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${token}`);
+    expect(profileRes.status).toBe(200);
+    expect(profileRes.body.user.email).toBe(freshEmail);
+
+    // 5. Add product to cart with fresh user
+    const addCartRes = await request(app)
+      .post('/api/cart')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ product_id: 2, quantity: 1 });
+    expect(addCartRes.status).toBe(200);
+
+    // 6. Get cart
+    const getCartRes = await request(app)
+      .get('/api/cart')
+      .set('Authorization', `Bearer ${token}`);
+    expect(getCartRes.status).toBe(200);
+    expect(getCartRes.body.items.length).toBe(1);
+
+    // 7. Place order with fresh user
+    const placeOrderRes = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        shippingAddress: {
+          full_name: 'Fresh Customer',
+          phone: '+91 9999999999',
+          street: '456 Innovation Way',
+          city: 'Mumbai',
+          state: 'Maharashtra',
+          postal_code: '400001',
+          country: 'India'
+        },
+        paymentMethod: 'COD'
+      });
+    expect(placeOrderRes.status).toBe(201);
+    expect(placeOrderRes.body.order).toBeDefined();
+  });
+
   it('End-to-End: login, add product to cart, place order, and verify in order history', async () => {
     // 1. Login
     const loginRes = await request(app).post('/api/auth/login').send({

@@ -93,30 +93,21 @@ export const db: any = realDb || {
     const lowerSql = sql.toLowerCase().trim();
     return {
       get: (...args: any[]) => {
-        if (lowerSql.includes('count(*) as count from users')) {
-          return { count: fallbackUsers.length };
+        if (lowerSql.includes('count(*) as count from users') || lowerSql.includes('total_customers from users')) {
+          const count = fallbackUsers.filter(u => u.role === 'customer').length;
+          return { count, total_customers: count };
         }
         if (lowerSql.includes('from users')) {
           const argVal = args[0];
           let found: any = undefined;
-          if (typeof argVal === 'number') {
-            found = fallbackUsers.find(u => u.id === Number(argVal));
+          if (typeof argVal === 'number' || (typeof argVal === 'string' && /^\d+$/.test(argVal))) {
+            const numId = Number(argVal);
+            found = fallbackUsers.find(u => u.id === numId);
           } else if (typeof argVal === 'string') {
             const emailStr = argVal.toLowerCase().trim();
             found = fallbackUsers.find(u => u.email.toLowerCase() === emailStr);
           }
-          if (found) return found;
-
-          const emailStr = typeof argVal === 'string' ? argVal.toLowerCase().trim() : '';
-          const isCustomer = emailStr.includes('user') || argVal === 2;
-          return {
-            id: typeof argVal === 'number' ? Number(argVal) : (isCustomer ? 2 : 1),
-            name: isCustomer ? 'Demo Customer' : 'System Admin',
-            email: emailStr || (isCustomer ? 'user@smartcart.com' : 'admin@smartcart.com'),
-            password_hash: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW',
-            role: isCustomer ? 'customer' : 'admin',
-            phone: '+91 9876543210'
-          };
+          return found;
         }
         if (lowerSql.includes('from cart_items')) {
           if (lowerSql.includes('ci.id =') || lowerSql.includes('ci.id=?')) {
@@ -231,6 +222,46 @@ export const db: any = realDb || {
         return [];
       },
       run: (...args: any[]) => {
+        if (lowerSql.includes('insert into users')) {
+          const name = String(args[0] || '').trim();
+          const email = String(args[1] || '').toLowerCase().trim();
+          const passwordHash = String(args[2] || '');
+          const phone = args[3] ? String(args[3]) : '';
+          const existing = fallbackUsers.find(u => u.email.toLowerCase() === email);
+          if (existing) {
+            return { changes: 0, lastInsertRowid: existing.id };
+          }
+          const newId = nextUserId++;
+          const newUser = {
+            id: newId,
+            name,
+            email,
+            password_hash: passwordHash,
+            role: 'customer' as const,
+            phone,
+            created_at: new Date().toISOString()
+          };
+          fallbackUsers.push(newUser);
+          return { changes: 1, lastInsertRowid: newId };
+        }
+        if (lowerSql.includes('update users')) {
+          if (lowerSql.includes('password_hash =')) {
+            const newHash = args[0];
+            const userId = Number(args[1]);
+            const u = fallbackUsers.find(user => user.id === userId);
+            if (u) u.password_hash = newHash;
+          } else if (lowerSql.includes('name =')) {
+            const name = args[0];
+            const phone = args[1];
+            const userId = Number(args[2]);
+            const u = fallbackUsers.find(user => user.id === userId);
+            if (u) {
+              u.name = name;
+              u.phone = phone;
+            }
+          }
+          return { changes: 1, lastInsertRowid: 0 };
+        }
         if (lowerSql.includes('insert into cart_items')) {
           const userId = Number(args[0]);
           const productId = Number(args[1]);
