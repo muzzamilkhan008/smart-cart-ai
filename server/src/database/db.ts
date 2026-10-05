@@ -63,11 +63,25 @@ const fallbackProducts = [
   { id: 12, category_id: 3, category_name: 'Home & Kitchen', name: 'Ergonomic Memory Foam Contour Pillow', slug: 'ergonomic-memory-foam-pillow', sku: 'HOME-PIL-012', brand: 'ComfortRest', description: 'Cervical neck support pillow designed with breathable cooling gel memory foam.', price: 1899, discount_price: 1299, stock_quantity: 60, is_featured: 0, is_active: 1, rating: 4.5, review_count: 92, images: ['https://images.unsplash.com/photo-1584100936595-c0654b55a2e6?w=800'] }
 ];
 
+const fallbackUsers: Array<{
+  id: number;
+  name: string;
+  email: string;
+  password_hash: string;
+  role: 'customer' | 'admin';
+  phone?: string;
+  created_at?: string;
+}> = [
+  { id: 1, name: 'System Admin', email: 'admin@smartcart.com', password_hash: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW', role: 'admin', phone: '+91 9876543210' },
+  { id: 2, name: 'Demo Customer', email: 'user@smartcart.com', password_hash: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW', role: 'customer', phone: '+91 9876543210' }
+];
+
 const fallbackCartItems: Array<{ id: number; user_id: number; product_id: number; quantity: number; created_at: string }> = [];
 const fallbackOrders: Array<any> = [];
 const fallbackOrderItems: Array<any> = [];
 const fallbackWishlistItems: Array<{ id: number; user_id: number; product_id: number; created_at: string }> = [];
 
+let nextUserId = 3;
 let nextCartItemId = 1;
 let nextOrderId = 1;
 let nextOrderItemId = 1;
@@ -80,14 +94,23 @@ export const db: any = realDb || {
     return {
       get: (...args: any[]) => {
         if (lowerSql.includes('count(*) as count from users')) {
-          return { count: 3 };
+          return { count: fallbackUsers.length };
         }
         if (lowerSql.includes('from users')) {
           const argVal = args[0];
+          let found: any = undefined;
+          if (typeof argVal === 'number') {
+            found = fallbackUsers.find(u => u.id === Number(argVal));
+          } else if (typeof argVal === 'string') {
+            const emailStr = argVal.toLowerCase().trim();
+            found = fallbackUsers.find(u => u.email.toLowerCase() === emailStr);
+          }
+          if (found) return found;
+
           const emailStr = typeof argVal === 'string' ? argVal.toLowerCase().trim() : '';
           const isCustomer = emailStr.includes('user') || argVal === 2;
           return {
-            id: typeof argVal === 'number' ? argVal : (isCustomer ? 2 : 1),
+            id: typeof argVal === 'number' ? Number(argVal) : (isCustomer ? 2 : 1),
             name: isCustomer ? 'Demo Customer' : 'System Admin',
             email: emailStr || (isCustomer ? 'user@smartcart.com' : 'admin@smartcart.com'),
             password_hash: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW',

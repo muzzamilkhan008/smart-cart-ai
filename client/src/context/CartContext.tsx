@@ -32,7 +32,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { showToast } = useToast();
 
   const fetchCart = useCallback(async () => {
-    if (!user) {
+    const token = localStorage.getItem('smartcart_token');
+    if (!user && !token) {
       setItems([]);
       setSummary(defaultSummary);
       return;
@@ -40,8 +41,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       const data = await api.getCart();
-      setItems(data.items);
-      setSummary(data.summary);
+      setItems(data.items || []);
+      setSummary(data.summary || defaultSummary);
     } catch (err) {
       // Cart fetch failed silently
     } finally {
@@ -54,7 +55,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [fetchCart]);
 
   const addToCart = async (productId: number, quantity: number = 1) => {
-    if (!user) {
+    const token = localStorage.getItem('smartcart_token');
+    if (!user && !token) {
       showToast('Please log in to add items to your cart', 'info');
       return;
     }
@@ -63,7 +65,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       showToast(res.message || 'Added to cart!');
       await fetchCart();
     } catch (err: any) {
-      showToast(err.message || 'Failed to add item to cart', 'error');
+      if (err.message?.includes('Authentication required') || err.message?.includes('401')) {
+        showToast('Please log in to add items to your cart', 'info');
+      } else {
+        showToast(err.message || 'Failed to add item to cart', 'error');
+      }
     }
   };
 
